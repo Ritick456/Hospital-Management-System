@@ -1,35 +1,23 @@
 package com.capgemini.hospital_management_system.controller;
 
-import com.capgemini.hospital_management_system.dto.CreateDepartmentDto;
-import com.capgemini.hospital_management_system.dto.DepartmentDto;
-import com.capgemini.hospital_management_system.dto.PhysicianDepartmentDto;
-import com.capgemini.hospital_management_system.model.Department;
-import com.capgemini.hospital_management_system.model.Physician;
-import com.capgemini.hospital_management_system.dto.Response;
-import com.capgemini.hospital_management_system.repository.DepartmentRepository;
-
-import com.capgemini.hospital_management_system.repository.PhysicianRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import com.capgemini.hospital_management_system.dto.*;
+import com.capgemini.hospital_management_system.model.*;
+import com.capgemini.hospital_management_system.repository.*;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
-
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
+import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
-
 import org.modelmapper.ModelMapper;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 
-import java.time.LocalDateTime;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.when;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class DepartmentControllerTest {
+class DepartmentControllerTest {
 
     @Mock
     private DepartmentRepository departmentRepository;
@@ -78,13 +66,18 @@ public class DepartmentControllerTest {
         when(modelMapper.map(physician, PhysicianDepartmentDto.class)).thenReturn(physicianDto);
 
         // Act
-        ResponseEntity<Response<DepartmentDto>> responseEntity = departmentController.getDepartmentDetailsById(1);
+        ResponseEntity<Response<DepartmentDto>> response =
+                departmentController.getDepartmentDetailsById(1);
 
         // Assert
-        assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
-        assertEquals(1, responseEntity.getBody().getData().getDepartmentId());
-        assertEquals("Cardiology", responseEntity.getBody().getData().getName());
-        assertEquals("Dr. House", responseEntity.getBody().getData().getPhysicianDetail().getName());
+        assertEquals(HttpStatus.FOUND, response.getStatusCode());
+        assertNotNull(response.getBody());
+
+        DepartmentDto responseDto = response.getBody().getData();
+        assertEquals(1, responseDto.getDepartmentId());
+        assertEquals("Cardiology", responseDto.getName());
+        assertEquals("Dr. House", responseDto.getPhysicianDetail().getName());
+        assertEquals(101, responseDto.getPhysicianDetail().getEmployeeId());
     }
 
     @Test
@@ -94,14 +87,44 @@ public class DepartmentControllerTest {
         when(modelMapper.map(physician, PhysicianDepartmentDto.class)).thenReturn(physicianDto);
 
         // Act
-        ResponseEntity<Response<PhysicianDepartmentDto>> responseEntity =
+        ResponseEntity<Response<PhysicianDepartmentDto>> response =
                 departmentController.getDepartmentHeadDetailsById(10);
 
         // Assert
-        assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
-        assertNotNull(responseEntity.getBody());
-        assertEquals("Dr. House", responseEntity.getBody().getData().getName());
-        assertEquals(101, responseEntity.getBody().getData().getEmployeeId());
+        assertEquals(HttpStatus.FOUND, response.getStatusCode());
+        assertNotNull(response.getBody());
+
+        PhysicianDepartmentDto headDto = response.getBody().getData();
+        assertEquals("Dr. House", headDto.getName());
+        assertEquals(101, headDto.getEmployeeId());
+    }
+
+    @Test
+    void testCreateDepartment_Success() {
+        // Arrange
+        CreateDepartmentDto createDto = new CreateDepartmentDto();
+        createDto.setDeptId(1);
+        createDto.setName("Cardiology");
+        createDto.setPhysicianId(101);
+
+        when(physicianRepository.findById(anyInt())).thenReturn(Optional.of(physician));
+        when(departmentRepository.save(any(Department.class))).thenReturn(department);
+        when(modelMapper.map(department, DepartmentDto.class)).thenReturn(departmentDto);
+        when(modelMapper.map(physician, PhysicianDepartmentDto.class)).thenReturn(physicianDto);
+
+        // Act
+        ResponseEntity<Response<DepartmentDto>> response =
+                departmentController.createDepartment(createDto);
+
+        // Assert
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Department created successfully", response.getBody().getMessage());
+
+        DepartmentDto createdDept = response.getBody().getData();
+        assertEquals(1, createdDept.getDepartmentId());
+        assertEquals("Cardiology", createdDept.getName());
+        assertEquals(101, createdDept.getPhysicianDetail().getEmployeeId());
     }
 
 

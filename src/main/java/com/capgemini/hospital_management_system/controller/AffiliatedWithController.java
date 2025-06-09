@@ -50,7 +50,6 @@ public class AffiliatedWithController {
     }
 
 
-
     @GetMapping("/department/{physicianId}")
     public ResponseEntity<Response<List<DepartmentDto>>> getDepartmentsByPhysician(@PathVariable Long physicianId) {
         List<AffiliatedWith> affiliations = affiliatedWithRepository.findByPhysician_EmployeeId(physicianId);
@@ -92,5 +91,5 @@ public class AffiliatedWithController {
             return new ResponseEntity<>(response , HttpStatus.FOUND);
         }
 
-        
+
 }
