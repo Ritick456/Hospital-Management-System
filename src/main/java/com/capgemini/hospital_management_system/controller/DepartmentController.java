@@ -95,6 +95,7 @@ public class DepartmentController {
                 .build();
 
         return new ResponseEntity<>(response, HttpStatus.FOUND);
+
     }
 
 
